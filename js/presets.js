@@ -23,6 +23,7 @@ export const DEFAULTS = {
   edgeColor: '#0B1F6B',
   chroma: 0.03,
   mode: 'subtractive',
+  pigmentStrength: 1,
   pigments: [
     { color: '#1340D0', pos: 0.0, width: 0.3, strength: 1.0, soft: 0.03 },
     { color: '#E23A86', pos: 0.36, width: 0.36, strength: 0.85, soft: 0.3 },

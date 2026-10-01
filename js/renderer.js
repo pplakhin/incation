@@ -226,7 +226,7 @@ export class Renderer {
       .i('uPigCount', n).v3('uPigCol', cols)
       .fv('uPigPos', pad(pig.map((q) => q.pos), 0))
       .fv('uPigWid', pad(pig.map((q) => q.width), 1))
-      .fv('uPigStr', pad(pig.map((q) => q.strength), 0))
+      .fv('uPigStr', pad(pig.map((q) => q.strength * (p.pigmentStrength ?? 1)), 0))
       .fv('uPigSoft', pad(pig.map((q) => q.soft), 0.1))
       .i('uMode', p.mode === 'gradient' ? 1 : 0)
       .f('uSmear', p.smear).f('uLanes', p.lanes).f('uLaneFreq', p.laneFreq)
