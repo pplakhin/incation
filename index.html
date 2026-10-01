@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>INCATION — бумажная хроматография</title>
+<meta name="description" content="Превращает фото в эффект бумажной хроматографии прямо в браузере. Изображения никуда не отправляются.">
+<meta name="theme-color" content="#F5F1EA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="INCATION">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">INCATION</div>
+    <div class="actions">
+      <label class="btn" title="Открыть фото">
+        <input id="file" type="file" accept="image/*" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-2h6l2 2h3v12H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+        <span>Фото</span>
+      </label>
+      <button class="btn" id="hold" type="button" title="Удерживайте, чтобы увидеть исходник">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M5 6h5v12H5zM14 6h5v12h-5z" /></svg>
+        <span>До/после</span>
+      </button>
+      <button class="btn icon-only" id="split" type="button" title="Шторка до/после" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M8 9l-3 3 3 3M16 9l3 3-3 3" /></svg>
+      </button>
+      <button class="btn primary" id="save" type="button" title="Сохранить PNG в полном разрешении">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+        <span>Сохранить</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="frame" id="frame">
+      <canvas id="view"></canvas>
+      <div class="split-line" id="split-line" hidden><span></span></div>
+      <div class="brush" id="brush" hidden></div>
+    </div>
+    <div class="drop" id="drop" hidden>Отпустите, чтобы открыть фото</div>
+  </main>
+
+  <aside class="panel" id="panel" data-state="peek">
+    <button class="handle" id="handle" type="button" aria-label="Параметры"><span></span></button>
+    <div class="panel-body" id="panel-body"></div>
+  </aside>
+</div>
+
+<div class="nogl" id="nogl" hidden>
+  <div>
+    <h1>INCATION</h1>
+    <p>Этому браузеру не хватает WebGL2 — на нём работает обработка изображения.</p>
+    <p>Откройте страницу в свежей версии Chrome, Safari (iOS 15+) или Firefox. Если WebGL2 отключён в настройках или заблокирован драйвером, включите аппаратное ускорение.</p>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card">
+    <img id="modal-img" alt="Результат">
+    <p id="modal-info"></p>
+    <div class="modal-actions">
+      <button class="btn primary" id="modal-share" type="button">Поделиться / в Фото</button>
+      <a class="btn" id="modal-download" download="incation.png">Скачать PNG</a>
+      <button class="btn" id="modal-close" type="button">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
