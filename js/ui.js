@@ -1,6 +1,5 @@
-// Панель в виде акварельной палитры: кюветы-пресеты, три раздела-кюветы,
+// Панель в виде акварельной палитры: выбор фронта и три раздела-кюветы,
 // в каждом — две-три настройки. Сверху — выбор фронта.
-import { PRESETS } from './presets.js';
 
 const pct = (d = 0) => (v) => `${(v * 100).toFixed(d)}%`;
 const num = (d = 2) => (v) => (+v).toFixed(d);
@@ -105,19 +104,6 @@ export function buildUI(root, ctx) {
     ], true),
   );
 
-  // --- пресеты-кюветы с миниатюрами ---
-  const presetBox = el('div', { class: 'pans', role: 'group', 'aria-label': 'Пресеты' });
-  const thumbs = {};
-  for (const pr of PRESETS) {
-    const img = el('canvas', { class: 'pan-swatch', width: 1, height: 1 });
-    thumbs[pr.id] = img;
-    const b = el('button', { type: 'button', class: 'pan', title: pr.name, onclick: () => { ctx.applyPreset(pr.id); refresh(); } },
-      img, el('span', {}, pr.name));
-    b.dataset.id = pr.id;
-    presetBox.append(b);
-  }
-  updaters.push(() => presetBox.querySelectorAll('.pan').forEach((b) => b.classList.toggle('active', b.dataset.id === ctx.presetId)));
-
   // --- разделы: «кюветы» с тремя настройками ---
   const sections = [
     {
@@ -162,7 +148,6 @@ export function buildUI(root, ctx) {
 
   root.append(
     front,
-    presetBox,
     tabs,
     bodies,
     el('div', { class: 'foot' },
@@ -172,5 +157,5 @@ export function buildUI(root, ctx) {
 
   function refresh() { for (const u of updaters) u(); }
   refresh();
-  return { refresh, thumbs };
+  return { refresh };
 }

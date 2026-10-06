@@ -26,6 +26,8 @@ export function setupFronts({ frame, ctx }) {
   const value = (a) => ctx.params[a.key];
 
   function paint() {
+    // место под ползунок резервируется только у того края, где он виден
+    frame.parentElement.classList.toggle('front-h', ctx.params.frontMode === 'h');
     for (const a of axes) {
       const v = value(a);
       const pos = `${v * 100}%`;

@@ -98,10 +98,11 @@ button, input { font: inherit; color: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px 40px 48px; /* снизу и слева — ползунки фронта */
+  padding: 8px 16px 40px; /* снизу — ползунок фронта (слева — у горизонтального) */
   min-height: 0;
   overflow: hidden;
 }
+.stage.front-h { padding: 8px 16px 16px 48px; }
 .frame {
   position: relative;
   box-shadow: 0 1px 2px rgba(40, 30, 20, .08), 0 10px 30px rgba(40, 30, 20, .14);
@@ -165,47 +166,6 @@ button, input { font: inherit; color: inherit; }
   background: var(--grain), var(--enamel);
   box-shadow: 0 0 0 1px var(--line), 0 6px 24px rgba(60, 45, 30, .12), inset 0 1px 0 #fff;
 }
-
-/* кюветы-пресеты */
-.pans {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-.pan {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  font-size: 11px;
-  color: var(--muted);
-  touch-action: manipulation;
-}
-.pan-swatch {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
-  border-radius: 12px;
-  background: var(--paper);
-  box-shadow: var(--well);
-  /* мягкий край «застывшей краски» */
-  -webkit-mask-image: radial-gradient(closest-side, #000 82%, rgba(0, 0, 0, .55) 100%);
-  mask-image: radial-gradient(closest-side, #000 82%, rgba(0, 0, 0, .55) 100%);
-  -webkit-mask-size: 118% 118%;
-  mask-size: 118% 118%;
-  -webkit-mask-position: center;
-  mask-position: center;
-}
-.pan span { max-width: 100%; text-align: center; line-height: 1.15; min-height: 2.3em; }
-.pan.active { color: var(--ink); font-weight: 600; }
-.pan.active .pan-swatch { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* разделы — круглые кюветы с пятном краски */
 .tabs {
@@ -373,12 +333,10 @@ input[type=range]::-moz-range-thumb {
   }
   .brand { font-size: 12px; letter-spacing: .12em; }
   .actions { gap: 4px; }
-  .stage { padding: 4px 10px 34px 38px; }
+  .stage { padding: 4px 10px 34px; }
+  .stage.front-h { padding: 4px 10px 10px 38px; }
   .panel { padding: 0 8px calc(8px + var(--safe-b)); }
   .panel-body { padding: 10px; border-radius: 20px; }
-  .pans { gap: 6px; }
-  .pan-swatch { aspect-ratio: 2.1 / 1; }
-  .pan span { min-height: 0; }
   .tab { min-height: 40px; padding: 2px; }
   input[type=range] { height: 26px; }
   .foot { margin-top: 0; }

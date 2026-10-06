@@ -83,7 +83,6 @@ canvas.addEventListener('webglcontextlost', (e) => {
 canvas.addEventListener('webglcontextrestored', () => {
   try {
     createRenderer();
-    drawThumbs();
     requestRender();
   } catch (e) {
     console.error(e);
@@ -117,20 +116,6 @@ function layout() {
 }
 new ResizeObserver(layout).observe(stage);
 
-// ---------- миниатюры пресетов в кюветах ----------
-function drawThumbs() {
-  if (!renderer || !state.source || !ui) return;
-  const L = 112;
-  const s = L / Math.max(state.srcW, state.srcH);
-  const w = Math.max(1, Math.round(state.srcW * s)), h = Math.max(1, Math.round(state.srcH * s));
-  for (const pr of PRESETS) {
-    const c = ui.thumbs[pr.id];
-    c.width = w;
-    c.height = h;
-    c.getContext('2d').putImageData(new ImageData(renderer.renderPixels(presetParams(pr.id), w, h), w, h), 0, 0);
-  }
-}
-
 // ---------- загрузка изображения ----------
 async function decode(file) {
   const url = URL.createObjectURL(file);
@@ -162,7 +147,6 @@ function setSource(img, w, h, name) {
   state.srcH = h;
   state.name = name;
   if (renderer) renderer.setSource(c);
-  drawThumbs();
   layout();
 }
 
@@ -230,13 +214,6 @@ const ctx = {
     persist();
     ui?.refresh();
     fronts?.refresh();
-  },
-  applyPreset(id) {
-    state.params = presetParams(id);
-    state.presetId = id;
-    persist();
-    fronts?.refresh();
-    requestRender();
   },
   reset() {
     state.params = presetParams(PRESETS[0].id);
