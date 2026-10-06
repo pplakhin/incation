@@ -21,12 +21,12 @@ function seedVec(seed) {
   return [f(seed * 12.9898 + 1.0) * 173.0, f(seed * 78.233 + 2.0) * 131.0];
 }
 
-// Грани фронта: X у правого края и Y у верхнего означают «выключена».
+// Фронт: ось, сторона эффекта и направление растекания (к фронту; ось y экрана вниз)
 function frontOf(p) {
-  const on = [p.frontX < 0.995 ? 1 : 0, p.frontY > 0.005 ? 1 : 0];
-  // направление растекания (к фронту); ось y экрана направлена вниз
-  const dir = on[0] && on[1] ? [Math.SQRT1_2, -Math.SQRT1_2] : on[1] ? [0, -1] : [1, 0];
-  return { on, dir };
+  const axis = p.frontMode === 'h' ? 1 : 0;
+  const side = (axis ? p.sideY : p.sideX) < 0 ? -1 : 1;
+  const dir = axis ? [0, -side] : [side, 0];
+  return { axis, side, dir };
 }
 
 export class Renderer {
@@ -162,18 +162,18 @@ export class Renderer {
   }
 
   _updateField(p) {
-    const key = [this.version, this.paintVersion, p.maskMode, p.frontX, p.frontY, p.cornerRadius, p.meander,
+    const key = [this.version, this.paintVersion, p.maskMode, p.frontMode, p.frontX, p.frontY, p.sideX, p.sideY, p.meander,
       p.threshold, p.softness, p.invert, p.seed].join('|');
     if (this.keys.field === key) return;
     const gl = this.gl, P = this.progs;
-    const { on } = frontOf(p);
+    const { axis, side } = frontOf(p);
     const mode = { line: 0, luma: 1, paint: 2 }[p.maskMode] ?? 0;
 
     this.mask.bind();
     P.mask.use()
       .f('uRes', this.mw, this.mh).f('uAspect', ...this.aspect)
-      .f('uFront', p.frontX * this.aspect[0], p.frontY * this.aspect[1]).f('uFrontOn', ...on)
-      .f('uRadius', p.cornerRadius ?? 0.1).f('uMeander', p.meander)
+      .f('uFront', p.frontX * this.aspect[0], p.frontY * this.aspect[1]).i('uAxis', axis).f('uSide', side)
+      .f('uMeander', p.meander)
       .f('uSeed', ...seedVec(p.seed)).i('uMode', mode)
       .tex('uLum', this.lumOut.tex).tex('uPaint', this.paintTex)
       .f('uThreshold', mode === 2 ? 0.5 : p.threshold).f('uSoft', mode === 2 ? 0.02 : p.softness).f('uInvert', p.invert ? 1 : 0);
@@ -221,8 +221,7 @@ export class Renderer {
     P.f('uAspect', ...this.aspect)
       .tex('uDist', this.distA.tex).tex('uBlur', this.blurOut.tex).tex('uSrc', opts.photo || this.src)
       .f('uDir', ...front.dir)
-      .f('uFrontPos', p.frontX * this.aspect[0], p.frontY * this.aspect[1]).f('uFrontOn', ...front.on)
-      .f('uBlurAmt', p.blur).f('uSeed', ...seedVec(p.seed))
+      .i('uAxis', front.axis).f('uBlurAmt', p.blur).f('uSeed', ...seedVec(p.seed))
       .f('uLobeAmp', p.lobeAmp).f('uLobeFreq', p.lobeFreq).f('uRough', p.rough)
       .f('uRoughFreq', p.roughFreq).f('uPocket', p.pocket)
       .f('uBandW', Math.max(0.002, p.bandWidth)).f('uResidual', p.residual)

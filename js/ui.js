@@ -1,5 +1,5 @@
 // Панель в виде акварельной палитры: кюветы-пресеты, три раздела-кюветы,
-// в каждом — три-четыре настройки.
+// в каждом — две-три настройки. Сверху — выбор фронта.
 import { PRESETS } from './presets.js';
 
 const pct = (d = 0) => (v) => `${(v * 100).toFixed(d)}%`;
@@ -63,6 +63,48 @@ export function buildUI(root, ctx) {
     return el('div', { class: 'row' }, el('div', { class: 'row-head' }, el('label', {}, 'Цвета пигментов')), box);
   }
 
+  // --- фронт: ориентация и сторона эффекта; положение — ползунком на краю изображения ---
+  const icon = (d) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 20 20');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.innerHTML = d;
+    return svg;
+  };
+  const ICON = {
+    v: '<rect x="2" y="3" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="3" width="9" height="14" rx="2" fill="currentColor" opacity=".35"/><path d="M11 3v14" stroke="currentColor" stroke-width="2"/>',
+    h: '<rect x="2" y="3" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="16" height="8" rx="2" fill="currentColor" opacity=".35"/><path d="M2 9h16" stroke="currentColor" stroke-width="2"/>',
+  };
+  function seg(items, small) {
+    const box = el('div', { class: small ? 'seg small' : 'seg', role: 'radiogroup' });
+    const btns = items.map((it) => {
+      const b = el('button', { type: 'button', role: 'radio', title: it.title, onclick: () => { it.pick(); ctx.commit(); } },
+        it.icon ? icon(it.icon) : null, el('span', {}, it.label));
+      box.append(b);
+      return b;
+    });
+    updaters.push(() => items.forEach((it, i) => {
+      const on = it.active();
+      btns[i].classList.toggle('active', on);
+      btns[i].setAttribute('aria-checked', on);
+      if (it.text) btns[i].lastChild.textContent = it.text();
+    }));
+    return box;
+  }
+  const isH = () => P().frontMode === 'h';
+  const sideKey = () => (isH() ? 'sideY' : 'sideX');
+  const front = el('div', { class: 'front', 'aria-label': 'Фронт' },
+    seg([
+      { label: 'Вертикальное', icon: ICON.v, title: 'Вертикальный фронт: эффект слева или справа', active: () => !isH(), pick: () => ctx.set('frontMode', 'v') },
+      { label: 'Горизонтальное', icon: ICON.h, title: 'Горизонтальный фронт: эффект сверху или снизу', active: isH, pick: () => ctx.set('frontMode', 'h') },
+    ]),
+    seg([
+      // sideX: 1 — слева; sideY: −1 — сверху
+      { label: '', text: () => (isH() ? 'Эффект сверху' : 'Эффект слева'), active: () => P()[sideKey()] === (isH() ? -1 : 1), pick: () => ctx.set(sideKey(), isH() ? -1 : 1) },
+      { label: '', text: () => (isH() ? 'Эффект снизу' : 'Эффект справа'), active: () => P()[sideKey()] === (isH() ? 1 : -1), pick: () => ctx.set(sideKey(), isH() ? 1 : -1) },
+    ], true),
+  );
+
   // --- пресеты-кюветы с миниатюрами ---
   const presetBox = el('div', { class: 'pans', role: 'group', 'aria-label': 'Пресеты' });
   const thumbs = {};
@@ -83,8 +125,6 @@ export function buildUI(root, ctx) {
       body: [
         range('darken', 'Затемнение эффектом', 0, 1, 0.01, pct(0)),
         range('blur', 'Размытие', 0, 1, 0.01, num(2)),
-        range('smear', 'Растекание к фронту', 0, 0.6, 0.005, pct(0)),
-        range('lanes', 'Полосы', 0, 1, 0.01, num(2)),
       ],
     },
     {
@@ -121,6 +161,7 @@ export function buildUI(root, ctx) {
   }
 
   root.append(
+    front,
     presetBox,
     tabs,
     bodies,

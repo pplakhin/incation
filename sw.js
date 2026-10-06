@@ -1,6 +1,6 @@
 // Офлайн-режим: всё приложение кешируется при первой загрузке.
 // При изменении файлов увеличьте VERSION — клиенты получат обновление.
-const VERSION = 'incation-v4';
+const VERSION = 'incation-v5';
 const SHELL = [
   './',
   'index.html',

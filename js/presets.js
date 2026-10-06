@@ -3,11 +3,13 @@
 
 export const DEFAULTS = {
   maskMode: 'line',
-  // фронт: вертикальная грань на frontX (чернила слева), горизонтальная на frontY
-  // (чернила снизу), доли ширины/высоты кадра. frontX = 1 или frontY = 0 — грань выключена.
+  // фронт: 'v' — вертикальная линия на frontX, 'h' — горизонтальная на frontY
+  // (доли ширины/высоты кадра); side — сторона эффекта: 1 — слева/снизу, −1 — справа/сверху
+  frontMode: 'v',
   frontX: 0.72,
-  frontY: 0,
-  cornerRadius: 0.1,
+  frontY: 0.1,
+  sideX: 1,
+  sideY: 1,
   meander: 0.02,
   threshold: 0.5,
   softness: 0.08,
@@ -62,22 +64,22 @@ export const PRESETS = [
   {
     id: 'stripes',
     name: 'Полосы',
-    params: { frontX: 0.72, frontY: 0, bandWidth: 0.1, lobeAmp: 0.02, lobeFreq: 12, lanes: 0.8, laneFreq: 6, smear: 0.3, white: 0.62 },
+    params: { frontMode: 'v', frontX: 0.72, sideX: 1, bandWidth: 0.1, lobeAmp: 0.02, lobeFreq: 12, lanes: 0.8, laneFreq: 6, smear: 0.3, white: 0.62 },
   },
   {
     id: 'top',
     name: 'Фронт сверху',
-    params: { frontX: 1, frontY: 0.1, bandWidth: 0.22, lobeAmp: 0.05, lobeFreq: 5, meander: 0.03, pocket: 1, lanes: 0.25, laneFreq: 3, edgeWidth: 0.008 },
+    params: { frontMode: 'h', frontY: 0.1, sideY: 1, bandWidth: 0.22, lobeAmp: 0.05, lobeFreq: 5, meander: 0.03, pocket: 1, lanes: 0.25, laneFreq: 3, edgeWidth: 0.008 },
   },
   {
     id: 'right',
     name: 'Фронт справа',
-    params: { frontX: 0.82, frontY: 0, bandWidth: 0.2, lobeAmp: 0.035, lobeFreq: 4, meander: 0.05, pocket: 1, lanes: 0.2, laneFreq: 3, edgeWidth: 0.007, chroma: 0.04 },
+    params: { frontMode: 'v', frontX: 0.82, sideX: 1, bandWidth: 0.2, lobeAmp: 0.035, lobeFreq: 4, meander: 0.05, pocket: 1, lanes: 0.2, laneFreq: 3, edgeWidth: 0.007, chroma: 0.04 },
   },
   {
     id: 'soft',
     name: 'Мягкий',
-    params: { frontX: 0.78, frontY: 0, bandWidth: 0.08, lobeAmp: 0.012, edge: 0.8, chroma: 0.02, white: 0.7, saturation: 1.1 },
+    params: { frontMode: 'v', frontX: 0.78, sideX: 1, bandWidth: 0.08, lobeAmp: 0.012, edge: 0.8, chroma: 0.02, white: 0.7, saturation: 1.1 },
   },
 ];
 

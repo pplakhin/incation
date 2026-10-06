@@ -32,7 +32,7 @@ uniform float uSmear, uLanes, uLaneFreq, uInterior, uBlotch;
 uniform float uWhite, uSat, uPalShift;
 uniform float uPhoto;      // 1 − затемнение: сколько исходного фото видно сквозь чернила
 uniform float uBlurAmt;    // 0 — резкий исходник
-uniform vec2 uFrontPos, uFrontOn;
+uniform int uAxis;         // 0 — вертикальный фронт, 1 — горизонтальный
 uniform vec3 uIntC, uIntM, uIntY, uIntK;
 
 uniform vec3 uPaper;
@@ -58,18 +58,8 @@ float laneAt(float t, float depth) {
   return fbm(vec2(t * uLaneFreq, depth * uLaneFreq * 0.08) + uSeed * 0.37, 3);
 }
 
-// Две грани: вес вертикальной (1) против горизонтальной (0) — плавный по биссектрисе угла,
-// чтобы растекание и дорожки от двух фронтов сходились без шва.
-float wVert(vec2 p) {
-  float a = uFrontPos.x - p.x, b = p.y - uFrontPos.y;  // глубина от каждой грани
-  return smoothstep(-0.12, 0.12, b - a);
-}
-
-// Дорожки идут поперёк фронта: координата вдоль своей грани, у угла — плавный переход.
-float lanes(vec2 p, float depth) {
-  if (uFrontOn.x < 0.5 || uFrontOn.y < 0.5) return laneAt(uFrontOn.x > 0.5 ? p.y : p.x, depth);
-  return mix(laneAt(p.x, depth), laneAt(p.y, depth), wVert(p));
-}
+// Дорожки идут поперёк фронта: координата вдоль него.
+float lanes(vec2 p, float depth) { return laneAt(uAxis == 0 ? p.y : p.x, depth); }
 
 vec3 tint(vec3 c, float rho) { return pow(max(c, vec3(0.004)), vec3(max(rho, 0.0))); }
 
@@ -158,10 +148,7 @@ void main() {
   float laneMod = mix(1.0, smoothstep(0.32, 0.68, lane), uLanes);
 
   // интерьер: размытый исходник, протянутый вдоль градиента поля
-  // (у двух граней — вдоль сглаженного направления, без излома по биссектрисе)
-  vec2 gs = g;
-  if (uFrontOn.x > 0.5 && uFrontOn.y > 0.5) gs = normalize(mix(vec2(0.0, 1.0), vec2(-1.0, 0.0), wVert(p)) + 1e-4);
-  vec2 gUV = gs / uAspect;
+  vec2 gUV = g / uAspect;
   vec3 acc = vec3(0.0);
   float ws = 0.0;
   for (int i = 0; i < 14; i++) {

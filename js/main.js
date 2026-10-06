@@ -7,7 +7,7 @@ import { setupFronts } from './fronts.js';
 import { exportSize, renderPNG, download, canShareFile, isTouch, isIOS } from './export.js';
 
 const $ = (id) => document.getElementById(id);
-const STORE = 'incation:v3';
+const STORE = 'incation:v4';
 
 const canvas = $('view');
 const stage = $('stage');

@@ -1,12 +1,10 @@
-// Ползунки фронта по краям изображения: X — вдоль нижнего края (вертикальная грань),
-// Y — вдоль левого (горизонтальная). Крайнее положение со стороны бумаги выключает грань.
-const OFF = { frontX: 1, frontY: 0 };
-const SNAP = 0.03; // у края грань выключается
+// Ползунок положения фронта на краю изображения: для вертикального фронта —
+// вдоль нижнего края, для горизонтального — вдоль левого. Виден только активный.
 
 export function setupFronts({ frame, ctx }) {
   const axes = [
-    { key: 'frontX', cls: 'fx', label: 'Положение фронта по горизонтали', horizontal: true },
-    { key: 'frontY', cls: 'fy', label: 'Положение фронта по вертикали', horizontal: false },
+    { key: 'frontX', mode: 'v', cls: 'fx', label: 'Положение вертикального фронта', horizontal: true },
+    { key: 'frontY', mode: 'h', cls: 'fy', label: 'Положение горизонтального фронта', horizontal: false },
   ].map((a) => {
     const track = document.createElement('div');
     track.className = `axis ${a.cls}`;
@@ -26,7 +24,6 @@ export function setupFronts({ frame, ctx }) {
   });
 
   const value = (a) => ctx.params[a.key];
-  const isOff = (a, v) => Math.abs(v - OFF[a.key]) < 1e-6;
 
   function paint() {
     for (const a of axes) {
@@ -34,16 +31,14 @@ export function setupFronts({ frame, ctx }) {
       const pos = `${v * 100}%`;
       a.knob.style[a.horizontal ? 'left' : 'top'] = pos;
       a.guide.style[a.horizontal ? 'left' : 'top'] = pos;
-      a.track.classList.toggle('off', isOff(a, v));
+      a.track.hidden = (ctx.params.frontMode === 'h' ? 'h' : 'v') !== a.mode;
       a.knob.setAttribute('aria-valuenow', Math.round(v * 100));
-      a.knob.setAttribute('aria-valuetext', isOff(a, v) ? 'выключено' : `${Math.round(v * 100)}%`);
-      a.knob.title = isOff(a, v) ? 'Грань выключена — потяните, чтобы включить' : a.label;
+      a.knob.title = a.label;
     }
   }
 
   function set(a, v) {
     v = Math.min(1, Math.max(0, v));
-    if (Math.abs(v - OFF[a.key]) < SNAP) v = OFF[a.key];
     ctx.set(a.key, Math.round(v * 1000) / 1000);
     paint();
   }

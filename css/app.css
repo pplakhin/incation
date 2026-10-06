@@ -395,6 +395,33 @@ input[type=range]::-moz-range-thumb {
   #save { padding: 0 12px; }
 }
 
+/* ---------- выбор фронта вверху панели ---------- */
+.front { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-bottom: 12px; }
+.seg {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--well);
+}
+.seg button {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  min-height: 34px;
+  padding: 4px 3px;
+  border: 0; border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit; font-size: 12.5px;
+  cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.seg button span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg.small button { min-height: 28px; font-size: 12px; }
+.seg button.active { background: var(--enamel); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(60, 45, 30, .15); }
+.seg svg { width: 16px; height: 16px; flex: none; }
+
 /* ---------- ползунки фронта по краям изображения ---------- */
 .axis {
   position: absolute;
@@ -425,7 +452,7 @@ input[type=range]::-moz-range-thumb {
 .axis.fx .axis-knob { top: 14px; }
 .axis.fy .axis-knob { left: 14px; }
 .axis-knob:focus-visible { box-shadow: 0 0 0 3px var(--enamel), 0 0 0 5px var(--accent); }
-.axis.off .axis-knob { opacity: .45; }
+.axis[hidden] { display: none; }
 .axis.drag .axis-knob { transform: scale(1.15); }
 .axis-guide {
   position: absolute;

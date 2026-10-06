@@ -5,9 +5,9 @@ import { HEADER, NOISE, PACK } from './common.js';
 export const MASK = HEADER + NOISE + `
 uniform vec2 uRes;       // размер маски в пикселях
 uniform vec2 uAspect;    // (w, h) / max(w, h)
-uniform vec2 uFront;     // x вертикальной грани и y горизонтальной, бумажные единицы
-uniform vec2 uFrontOn;   // 1 — грань включена
-uniform float uRadius;   // скругление угла, где грани сходятся
+uniform vec2 uFront;     // x вертикального фронта и y горизонтального, бумажные единицы
+uniform int uAxis;       // 0 — вертикальный фронт, 1 — горизонтальный
+uniform float uSide;     // 1 — чернила слева/снизу, −1 — справа/сверху
 uniform float uMeander;  // крупная волна фронта
 uniform vec2 uSeed;
 uniform int uMode;       // 0 — линия, 1 — яркость, 2 — рисунок
@@ -23,12 +23,8 @@ void main() {
   vec2 p = uv * uAspect;
   float m;
   if (uMode == 0) {
-    // > 0 — бумага. Пересечение полуплоскостей «левее X» и «ниже Y»
-    // со скруглённым сочленением (точное расстояние вне угла).
-    float a = uFrontOn.x > 0.5 ? p.x - uFront.x : -1e3;
-    float b = uFrontOn.y > 0.5 ? uFront.y - p.y : -1e3;
-    vec2 u = max(vec2(uRadius + a, uRadius + b), 0.0);
-    float sd = min(-uRadius, max(a, b)) + length(u);
+    // > 0 — бумага (ось y направлена вниз)
+    float sd = uAxis == 0 ? uSide * (p.x - uFront.x) : uSide * (uFront.y - p.y);
     float wave = (fbm(p * 2.2 + uSeed, 3) - 0.5) * 2.0;
     sd -= uMeander * wave;
     float px = 1.0 / max(uRes.x, uRes.y);
