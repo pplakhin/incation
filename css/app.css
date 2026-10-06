@@ -98,7 +98,7 @@ button, input { font: inherit; color: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px 16px;
+  padding: 8px 16px 40px 48px; /* снизу и слева — ползунки фронта */
   min-height: 0;
   overflow: hidden;
 }
@@ -373,7 +373,7 @@ input[type=range]::-moz-range-thumb {
   }
   .brand { font-size: 12px; letter-spacing: .12em; }
   .actions { gap: 4px; }
-  .stage { padding: 4px 10px 10px; }
+  .stage { padding: 4px 10px 34px 38px; }
   .panel { padding: 0 8px calc(8px + var(--safe-b)); }
   .panel-body { padding: 10px; border-radius: 20px; }
   .pans { gap: 6px; }
@@ -394,3 +394,44 @@ input[type=range]::-moz-range-thumb {
   #save span { display: inline; }
   #save { padding: 0 12px; }
 }
+
+/* ---------- ползунки фронта по краям изображения ---------- */
+.axis {
+  position: absolute;
+  touch-action: none;
+  cursor: pointer;
+}
+.axis::before {
+  content: "";
+  position: absolute;
+  border-radius: 3px;
+  background: linear-gradient(var(--dir, 90deg), rgba(19, 64, 208, .2), rgba(222, 47, 126, .25), rgba(233, 162, 30, .25));
+  box-shadow: var(--well);
+}
+.axis.fx { left: 0; right: 0; top: calc(100% + 4px); height: 28px; cursor: ew-resize; }
+.axis.fx::before { left: 0; right: 0; top: 11px; height: 6px; }
+.axis.fy { top: 0; bottom: 0; right: calc(100% + 4px); width: 28px; cursor: ns-resize; --dir: 0deg; }
+.axis.fy::before { top: 0; bottom: 0; left: 11px; width: 6px; }
+.axis-knob {
+  position: absolute;
+  width: 22px; height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 18%, #6F8DF0 40%, var(--accent) 70%, var(--accent-ink));
+  box-shadow: 0 2px 5px rgba(11, 31, 107, .35);
+  outline: none;
+  transition: opacity .15s;
+}
+.axis.fx .axis-knob { top: 14px; }
+.axis.fy .axis-knob { left: 14px; }
+.axis-knob:focus-visible { box-shadow: 0 0 0 3px var(--enamel), 0 0 0 5px var(--accent); }
+.axis.off .axis-knob { opacity: .45; }
+.axis.drag .axis-knob { transform: scale(1.15); }
+.axis-guide {
+  position: absolute;
+  pointer-events: none;
+  border: 0 dashed rgba(255, 255, 255, .95);
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, .5));
+}
+.axis-guide.fx { top: 0; bottom: 0; border-left-width: 2px; margin-left: -1px; }
+.axis-guide.fy { left: 0; right: 0; border-top-width: 2px; margin-top: -1px; }

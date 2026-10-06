@@ -3,10 +3,11 @@ import { DEFAULTS, PRESETS, presetParams } from './presets.js';
 import { makeSample } from './sample.js';
 import { buildUI } from './ui.js';
 import { setupCompare } from './compare.js';
+import { setupFronts } from './fronts.js';
 import { exportSize, renderPNG, download, canShareFile, isTouch, isIOS } from './export.js';
 
 const $ = (id) => document.getElementById(id);
-const STORE = 'incation:v2';
+const STORE = 'incation:v3';
 
 const canvas = $('view');
 const stage = $('stage');
@@ -20,6 +21,7 @@ const state = {
   srcW: 0,
   srcH: 0,
   source: null, // canvas превью исходника
+  full: null,   // исходник в полном разрешении (для резкого фото при экспорте)
   name: 'incation',
 };
 
@@ -155,6 +157,7 @@ function setSource(img, w, h, name) {
   g.imageSmoothingQuality = 'high';
   g.drawImage(img, 0, 0, c.width, c.height);
   state.source = c;
+  state.full = img;
   state.srcW = w;
   state.srcH = h;
   state.name = name;
@@ -226,21 +229,26 @@ const ctx = {
   commit() {
     persist();
     ui?.refresh();
+    fronts?.refresh();
   },
   applyPreset(id) {
     state.params = presetParams(id);
     state.presetId = id;
     persist();
+    fronts?.refresh();
     requestRender();
   },
   reset() {
     state.params = presetParams(PRESETS[0].id);
     state.presetId = PRESETS[0].id;
     persist();
+    fronts?.refresh();
     requestRender();
   },
 };
+let fronts;
 ui = buildUI($('panel-body'), ctx);
+fronts = setupFronts({ frame, ctx });
 
 // ---------- до/после ----------
 setupCompare({
@@ -262,7 +270,7 @@ $('save').addEventListener('click', async () => {
   toast(`Готовлю PNG ${w}×${h}…`, 0);
   await new Promise((r) => setTimeout(r, 30));
   try {
-    const blob = await renderPNG(renderer, state.params, w, h);
+    const blob = await renderPNG(renderer, state.params, w, h, fullSource(w, h));
     const name = `${state.name}.png`;
     const note = reduced
       ? `Размер уменьшен до ${w}×${h}: исходник ${state.srcW}×${state.srcH} больше лимита холста этого устройства.`
@@ -283,6 +291,23 @@ $('save').addEventListener('click', async () => {
     requestRender();
   }
 });
+
+// Резкое фото видно сквозь чернила — тогда экспорт берёт исходник в полном разрешении,
+// а не уменьшенную копию превью.
+function fullSource(w, h) {
+  const p = state.params;
+  if (!state.full || ((p.darken ?? 0.65) >= 1 && p.blur >= 0.3)) return null;
+  const s = Math.min(1, renderer.maxSize / Math.max(w, h));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w * s));
+  c.height = Math.max(1, Math.round(h * s));
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff';
+  g.fillRect(0, 0, c.width, c.height);
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(state.full, 0, 0, c.width, c.height);
+  return c;
+}
 
 let modalURL;
 function showModal(blob, name, note) {

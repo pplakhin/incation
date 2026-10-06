@@ -5,8 +5,9 @@ import { HEADER, NOISE, PACK } from './common.js';
 export const MASK = HEADER + NOISE + `
 uniform vec2 uRes;       // размер маски в пикселях
 uniform vec2 uAspect;    // (w, h) / max(w, h)
-uniform vec2 uDir;       // направление растекания (к фронту)
-uniform float uPos;      // положение фронта вдоль uDir от центра
+uniform vec2 uFront;     // x вертикальной грани и y горизонтальной, бумажные единицы
+uniform vec2 uFrontOn;   // 1 — грань включена
+uniform float uRadius;   // скругление угла, где грани сходятся
 uniform float uMeander;  // крупная волна фронта
 uniform vec2 uSeed;
 uniform int uMode;       // 0 — линия, 1 — яркость, 2 — рисунок
@@ -20,16 +21,18 @@ out vec4 o;
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
   vec2 p = uv * uAspect;
-  vec2 q = p - 0.5 * uAspect;
-  vec2 perp = vec2(-uDir.y, uDir.x);
   float m;
   if (uMode == 0) {
-    float s = dot(q, uDir);
-    float t = dot(q, perp);
-    float wave = (fbm(vec2(t * 2.2, 3.7) + uSeed, 3) - 0.5) * 2.0;
-    float front = uPos + uMeander * wave;
+    // > 0 — бумага. Пересечение полуплоскостей «левее X» и «ниже Y»
+    // со скруглённым сочленением (точное расстояние вне угла).
+    float a = uFrontOn.x > 0.5 ? p.x - uFront.x : -1e3;
+    float b = uFrontOn.y > 0.5 ? uFront.y - p.y : -1e3;
+    vec2 u = max(vec2(uRadius + a, uRadius + b), 0.0);
+    float sd = min(-uRadius, max(a, b)) + length(u);
+    float wave = (fbm(p * 2.2 + uSeed, 3) - 0.5) * 2.0;
+    sd -= uMeander * wave;
     float px = 1.0 / max(uRes.x, uRes.y);
-    m = smoothstep(front + px, front - px, s);
+    m = smoothstep(px, -px, sd);
   } else {
     // крупное искажение границы, чтобы контур не повторял исходник буквально
     vec2 w = vec2(fbm(p * 3.0 + uSeed, 3), fbm(p * 3.0 + uSeed + 41.0, 3)) - 0.5;

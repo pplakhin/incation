@@ -81,7 +81,7 @@ export function buildUI(root, ctx) {
     {
       id: 'source', name: 'Исходное изображение', short: 'Изображение', color: '#E9B949',
       body: [
-        range('photo', 'Видимость фото', 0, 1, 0.01, pct(0)),
+        range('darken', 'Затемнение эффектом', 0, 1, 0.01, pct(0)),
         range('blur', 'Размытие', 0, 1, 0.01, num(2)),
         range('smear', 'Растекание к фронту', 0, 0.6, 0.005, pct(0)),
         range('lanes', 'Полосы', 0, 1, 0.01, num(2)),

@@ -21,10 +21,12 @@ function seedVec(seed) {
   return [f(seed * 12.9898 + 1.0) * 173.0, f(seed * 78.233 + 2.0) * 131.0];
 }
 
-function dirOf(angleDeg) {
-  // 0° — фронт справа, 90° — сверху (ось y экрана направлена вниз)
-  const a = (angleDeg * Math.PI) / 180;
-  return [Math.cos(a), -Math.sin(a)];
+// Грани фронта: X у правого края и Y у верхнего означают «выключена».
+function frontOf(p) {
+  const on = [p.frontX < 0.995 ? 1 : 0, p.frontY > 0.005 ? 1 : 0];
+  // направление растекания (к фронту); ось y экрана направлена вниз
+  const dir = on[0] && on[1] ? [Math.SQRT1_2, -Math.SQRT1_2] : on[1] ? [0, -1] : [1, 0];
+  return { on, dir };
 }
 
 export class Renderer {
@@ -160,18 +162,18 @@ export class Renderer {
   }
 
   _updateField(p) {
-    const key = [this.version, this.paintVersion, p.maskMode, p.angle, p.position, p.meander,
+    const key = [this.version, this.paintVersion, p.maskMode, p.frontX, p.frontY, p.cornerRadius, p.meander,
       p.threshold, p.softness, p.invert, p.seed].join('|');
     if (this.keys.field === key) return;
     const gl = this.gl, P = this.progs;
-    const dir = dirOf(p.angle);
-    const ext = 0.5 * (Math.abs(dir[0]) * this.aspect[0] + Math.abs(dir[1]) * this.aspect[1]);
+    const { on } = frontOf(p);
     const mode = { line: 0, luma: 1, paint: 2 }[p.maskMode] ?? 0;
 
     this.mask.bind();
     P.mask.use()
-      .f('uRes', this.mw, this.mh).f('uAspect', ...this.aspect).f('uDir', ...dir)
-      .f('uPos', (p.position * 2 - 1) * ext).f('uMeander', p.meander)
+      .f('uRes', this.mw, this.mh).f('uAspect', ...this.aspect)
+      .f('uFront', p.frontX * this.aspect[0], p.frontY * this.aspect[1]).f('uFrontOn', ...on)
+      .f('uRadius', p.cornerRadius ?? 0.1).f('uMeander', p.meander)
       .f('uSeed', ...seedVec(p.seed)).i('uMode', mode)
       .tex('uLum', this.lumOut.tex).tex('uPaint', this.paintTex)
       .f('uThreshold', mode === 2 ? 0.5 : p.threshold).f('uSoft', mode === 2 ? 0.02 : p.softness).f('uInvert', p.invert ? 1 : 0);
@@ -210,14 +212,17 @@ export class Renderer {
 
   _composeUniforms(p, opts) {
     const P = this.progs.compose.use();
+    const front = frontOf(p);
     const pig = p.pigments.slice(0, MAX_PIGMENTS);
     const n = pig.length;
     const pad = (arr, v) => { const a = arr.slice(); while (a.length < MAX_PIGMENTS) a.push(v); return a; };
     const cols = [];
     for (let i = 0; i < MAX_PIGMENTS; i++) cols.push(...(pig[i] ? hexToRgb(pig[i].color) : [1, 1, 1]));
     P.f('uAspect', ...this.aspect)
-      .tex('uDist', this.distA.tex).tex('uBlur', this.blurOut.tex).tex('uSrc', this.src)
-      .f('uDir', ...dirOf(p.angle)).f('uSeed', ...seedVec(p.seed))
+      .tex('uDist', this.distA.tex).tex('uBlur', this.blurOut.tex).tex('uSrc', opts.photo || this.src)
+      .f('uDir', ...front.dir)
+      .f('uFrontPos', p.frontX * this.aspect[0], p.frontY * this.aspect[1]).f('uFrontOn', ...front.on)
+      .f('uBlurAmt', p.blur).f('uSeed', ...seedVec(p.seed))
       .f('uLobeAmp', p.lobeAmp).f('uLobeFreq', p.lobeFreq).f('uRough', p.rough)
       .f('uRoughFreq', p.roughFreq).f('uPocket', p.pocket)
       .f('uBandW', Math.max(0.002, p.bandWidth)).f('uResidual', p.residual)
@@ -231,7 +236,7 @@ export class Renderer {
       .i('uMode', p.mode === 'gradient' ? 1 : 0)
       .f('uSmear', p.smear).f('uLanes', p.lanes).f('uLaneFreq', p.laneFreq)
       .f('uInterior', p.interior).f('uBlotch', p.blotch)
-      .f('uPhoto', p.photo ?? 0).f('uWhite', p.white).f('uSat', p.saturation).f('uPalShift', p.paletteShift)
+      .f('uPhoto', 1 - (p.darken ?? 0.65)).f('uWhite', p.white).f('uSat', p.saturation).f('uPalShift', p.paletteShift)
       .f('uIntC', ...hexToRgb(p.interiorC)).f('uIntM', ...hexToRgb(p.interiorM))
       .f('uIntY', ...hexToRgb(p.interiorY)).f('uIntK', ...hexToRgb(p.interiorK))
       .f('uPaper', ...hexToRgb(p.paper)).f('uGrain', p.grain).f('uGran', p.granulation)
@@ -254,8 +259,10 @@ export class Renderer {
   }
 
   // Полноразмерный рендер тайлами → RGBA-пиксели (строка 0 — верх изображения)
-  renderPixels(p, W, H) {
+  // full — исходник в полном разрешении: нужен, когда фото проступает сквозь чернила
+  renderPixels(p, W, H, full) {
     const gl = this.gl;
+    const photo = full ? createTexture(gl, 0, 0, { source: full }) : null;
     this._updateBlur(p);
     this._updateField(p);
     const T = Math.min(EXPORT_TILE, this.maxViewport[0], this.maxViewport[1]);
@@ -267,7 +274,7 @@ export class Renderer {
         const tw = Math.min(T, W - x0), th = Math.min(T, H - y0);
         tile.bind();
         gl.viewport(0, 0, tw, th);
-        this._composeUniforms(p, {}).f('uFull', W, H).f('uOffset', x0, y0).f('uFlip', 0);
+        this._composeUniforms(p, { photo }).f('uFull', W, H).f('uOffset', x0, y0).f('uFlip', 0);
         draw(gl);
         gl.readPixels(0, 0, tw, th, gl.RGBA, gl.UNSIGNED_BYTE, buf);
         for (let r = 0; r < th; r++) {
@@ -276,6 +283,7 @@ export class Renderer {
       }
     }
     tile.dispose();
+    if (photo) gl.deleteTexture(photo);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     return out;
   }

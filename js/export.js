@@ -19,8 +19,9 @@ export function exportSize(w, h) {
   };
 }
 
-export async function renderPNG(renderer, params, W, H) {
-  const px = renderer.renderPixels(params, W, H);
+export async function renderPNG(renderer, params, W, H, full = null) {
+  const px = renderer.renderPixels(params, W, H, full);
+  if (full) full.width = full.height = 0;
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;

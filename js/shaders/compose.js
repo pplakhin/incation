@@ -30,7 +30,9 @@ uniform int uMode;        // 0 — субтрактивное смешение, 
 
 uniform float uSmear, uLanes, uLaneFreq, uInterior, uBlotch;
 uniform float uWhite, uSat, uPalShift;
-uniform float uPhoto;      // сколько исходного фото проступает сквозь чернила
+uniform float uPhoto;      // 1 − затемнение: сколько исходного фото видно сквозь чернила
+uniform float uBlurAmt;    // 0 — резкий исходник
+uniform vec2 uFrontPos, uFrontOn;
 uniform vec3 uIntC, uIntM, uIntY, uIntK;
 
 uniform vec3 uPaper;
@@ -50,6 +52,23 @@ float distAt(vec2 uv) {
   float c = unpackDist(texelFetch(uDist, clamp(i + ivec2(0, 1), ivec2(0), r), 0));
   float d = unpackDist(texelFetch(uDist, clamp(i + ivec2(1, 1), ivec2(0), r), 0));
   return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float laneAt(float t, float depth) {
+  return fbm(vec2(t * uLaneFreq, depth * uLaneFreq * 0.08) + uSeed * 0.37, 3);
+}
+
+// Две грани: вес вертикальной (1) против горизонтальной (0) — плавный по биссектрисе угла,
+// чтобы растекание и дорожки от двух фронтов сходились без шва.
+float wVert(vec2 p) {
+  float a = uFrontPos.x - p.x, b = p.y - uFrontPos.y;  // глубина от каждой грани
+  return smoothstep(-0.12, 0.12, b - a);
+}
+
+// Дорожки идут поперёк фронта: координата вдоль своей грани, у угла — плавный переход.
+float lanes(vec2 p, float depth) {
+  if (uFrontOn.x < 0.5 || uFrontOn.y < 0.5) return laneAt(uFrontOn.x > 0.5 ? p.y : p.x, depth);
+  return mix(laneAt(p.x, depth), laneAt(p.y, depth), wVert(p));
 }
 
 vec3 tint(vec3 c, float rho) { return pow(max(c, vec3(0.004)), vec3(max(rho, 0.0))); }
@@ -112,7 +131,6 @@ void main() {
   vec2 g = vec2(distAt(uv + vec2(dts.x, 0.0)) - distAt(uv - vec2(dts.x, 0.0)),
                 distAt(uv + vec2(0.0, dts.y)) - distAt(uv - vec2(0.0, dts.y))) / (2.0 * dts * uAspect);
   g = length(g) > 1e-4 ? normalize(g) : -uDir;
-  vec2 perp = vec2(-uDir.y, uDir.x);
 
   // фронт: гребешки (клетки Уорли) + рваная кромка (fbm).
   // Гребешки считаются в ближайшей точке фронта, поэтому тянутся колоннами
@@ -136,12 +154,14 @@ void main() {
   float lobeK = lobeS * nearL;
 
   // дорожки поперёк фронта
-  float lt = dot(p, perp) * uLaneFreq;
-  float lane = fbm(vec2(lt, dot(p, uDir) * uLaneFreq * 0.08) + uSeed * 0.37, 3);
+  float lane = lanes(p, sdf);
   float laneMod = mix(1.0, smoothstep(0.32, 0.68, lane), uLanes);
 
   // интерьер: размытый исходник, протянутый вдоль градиента поля
-  vec2 gUV = g / uAspect;
+  // (у двух граней — вдоль сглаженного направления, без излома по биссектрисе)
+  vec2 gs = g;
+  if (uFrontOn.x > 0.5 && uFrontOn.y > 0.5) gs = normalize(mix(vec2(0.0, 1.0), vec2(-1.0, 0.0), wVert(p)) + 1e-4);
+  vec2 gUV = gs / uAspect;
   vec3 acc = vec3(0.0);
   float ws = 0.0;
   for (int i = 0; i < 14; i++) {
@@ -150,7 +170,8 @@ void main() {
     acc += texture(uBlur, uv + gUV * (f * uSmear)).rgb * wt;
     ws += wt;
   }
-  vec3 s = acc / ws;
+  // при малом размытии под чернилами остаётся резкий исходник
+  vec3 s = mix(texture(uSrc, uv).rgb, acc / ws, smoothstep(0.0, 0.3, uBlurAmt));
   vec3 cmy = clamp(1.0 - s, 0.0, 1.0);
   // нейтральная часть плотности уходит в серо-лавандовый, цветная — в пигменты палитры
   float k = min(cmy.r, min(cmy.g, cmy.b));
@@ -194,7 +215,7 @@ void main() {
   float cover = smoothstep(-pxP, pxP, dF);
   vec3 col = paper * mix(vec3(1.0), T, cover);
   // исходное фото под каймой: пигменты ложатся поверх него, а не вместо
-  vec3 photo = paper * texture(uSrc, uv).rgb * Tb;
+  vec3 photo = s * Tb;
   col = mix(col, photo, uPhoto * cover);
 
   if (uView == 2) col = vec3(0.5 + 4.0 * dF, 0.5 + 4.0 * sdf, cover);
