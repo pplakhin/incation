@@ -231,7 +231,7 @@ export class Renderer {
       .i('uMode', p.mode === 'gradient' ? 1 : 0)
       .f('uSmear', p.smear).f('uLanes', p.lanes).f('uLaneFreq', p.laneFreq)
       .f('uInterior', p.interior).f('uBlotch', p.blotch)
-      .f('uWhite', p.white).f('uSat', p.saturation).f('uPalShift', p.paletteShift)
+      .f('uPhoto', p.photo ?? 0).f('uWhite', p.white).f('uSat', p.saturation).f('uPalShift', p.paletteShift)
       .f('uIntC', ...hexToRgb(p.interiorC)).f('uIntM', ...hexToRgb(p.interiorM))
       .f('uIntY', ...hexToRgb(p.interiorY)).f('uIntK', ...hexToRgb(p.interiorK))
       .f('uPaper', ...hexToRgb(p.paper)).f('uGrain', p.grain).f('uGran', p.granulation)

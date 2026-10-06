@@ -30,6 +30,7 @@ uniform int uMode;        // 0 — субтрактивное смешение, 
 
 uniform float uSmear, uLanes, uLaneFreq, uInterior, uBlotch;
 uniform float uWhite, uSat, uPalShift;
+uniform float uPhoto;      // сколько исходного фото проступает сквозь чернила
 uniform vec3 uIntC, uIntM, uIntY, uIntK;
 
 uniform vec3 uPaper;
@@ -192,6 +193,9 @@ void main() {
 
   float cover = smoothstep(-pxP, pxP, dF);
   vec3 col = paper * mix(vec3(1.0), T, cover);
+  // исходное фото под каймой: пигменты ложатся поверх него, а не вместо
+  vec3 photo = paper * texture(uSrc, uv).rgb * Tb;
+  col = mix(col, photo, uPhoto * cover);
 
   if (uView == 2) col = vec3(0.5 + 4.0 * dF, 0.5 + 4.0 * sdf, cover);
   if (uView == 3) col = base;

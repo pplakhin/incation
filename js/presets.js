@@ -30,6 +30,7 @@ export const DEFAULTS = {
     { color: '#F7CF36', pos: 0.78, width: 0.5, strength: 0.9, soft: 0.35 },
   ],
 
+  photo: 0.35,
   blur: 0.62,
   smear: 0.18,
   lanes: 0.25,
