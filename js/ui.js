@@ -109,6 +109,7 @@ export function buildUI(root, ctx) {
     {
       id: 'source', name: 'Исходное изображение', short: 'Изображение', color: '#E9B949',
       body: [
+        range('overlay', 'Наложение эффекта', 0, 1, 0.01, pct(0)),
         range('darken', 'Затемнение эффектом', 0, 1, 0.01, pct(0)),
         range('blur', 'Размытие', 0, 1, 0.01, num(2)),
       ],

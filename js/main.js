@@ -269,11 +269,10 @@ $('save').addEventListener('click', async () => {
   }
 });
 
-// Резкое фото видно сквозь чернила — тогда экспорт берёт исходник в полном разрешении,
+// Исходник виден за фронтом (и сквозь чернила) — экспорт берёт его в полном разрешении,
 // а не уменьшенную копию превью.
 function fullSource(w, h) {
-  const p = state.params;
-  if (!state.full || ((p.darken ?? 0.65) >= 1 && p.blur >= 0.3)) return null;
+  if (!state.full) return null;
   const s = Math.min(1, renderer.maxSize / Math.max(w, h));
   const c = document.createElement('canvas');
   c.width = Math.max(1, Math.round(w * s));

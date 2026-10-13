@@ -30,6 +30,7 @@ uniform int uMode;        // 0 — субтрактивное смешение, 
 
 uniform float uSmear, uLanes, uLaneFreq, uInterior, uBlotch;
 uniform float uWhite, uSat, uPalShift;
+uniform float uAmount;     // степень наложения эффекта на исходник
 uniform float uPhoto;      // 1 − затемнение: сколько исходного фото видно сквозь чернила
 uniform float uBlurAmt;    // 0 — резкий исходник
 uniform int uAxis;         // 0 — вертикальный фронт, 1 — горизонтальный
@@ -200,10 +201,10 @@ void main() {
   T = pow(T, vec3(1.0 + speck * 1.1));
 
   float cover = smoothstep(-pxP, pxP, dF);
-  vec3 col = paper * mix(vec3(1.0), T, cover);
-  // исходное фото под каймой: пигменты ложатся поверх него, а не вместо
-  vec3 photo = s * Tb;
-  col = mix(col, photo, uPhoto * cover);
+  // эффект накладывается поверх исходника: за фронтом — само фото, а не бумага
+  vec3 orig = texture(uSrc, uv).rgb;
+  vec3 ink = mix(paper * T, s * Tb, uPhoto);   // пастель или фото под каймой
+  vec3 col = mix(orig, ink, cover * uAmount);
 
   if (uView == 2) col = vec3(0.5 + 4.0 * dF, 0.5 + 4.0 * sdf, cover);
   if (uView == 3) col = base;

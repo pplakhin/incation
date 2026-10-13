@@ -35,6 +35,7 @@ export const DEFAULTS = {
     { color: '#F7CF36', pos: 0.78, width: 0.5, strength: 0.9, soft: 0.35 },
   ],
 
+  overlay: 1,
   darken: 0.65,
   blur: 0.62,
   smear: 0.18,
