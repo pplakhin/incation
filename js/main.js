@@ -318,6 +318,12 @@ setSource(sample, sample.width, sample.height, 'incation-demo');
 
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || new URLSearchParams(location.search).has('sw'))) {
   navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW', e));
+  // старый воркер сменился новым — перезагружаем один раз, чтобы показать свежую версию
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController && !reloaded) { reloaded = true; location.reload(); }
+  });
 }
 
 // для отладки из консоли

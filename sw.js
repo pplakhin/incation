@@ -1,6 +1,6 @@
 // Офлайн-режим: всё приложение кешируется при первой загрузке.
 // При изменении файлов увеличьте VERSION — клиенты получат обновление.
-const VERSION = 'incation-v9';
+const VERSION = 'incation-v10';
 const SHELL = [
   './',
   'index.html',
@@ -37,20 +37,19 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Сначала кеш, в фоне — обновление из сети (stale-while-revalidate).
+// Сначала сеть (с проверкой HTTP-кеша), кеш — только без сети: новая версия видна сразу.
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith(
     caches.open(VERSION).then(async (cache) => {
-      const cached = await cache.match(req, { ignoreSearch: true });
-      const network = fetch(req)
-        .then((res) => {
-          if (res.ok) cache.put(req, res.clone());
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
+      try {
+        const res = await fetch(req, { cache: 'no-cache' });
+        if (res.ok) cache.put(req, res.clone());
+        return res;
+      } catch {
+        return (await cache.match(req, { ignoreSearch: true })) || Response.error();
+      }
     }),
   );
 });

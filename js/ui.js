@@ -37,15 +37,6 @@ export function buildUI(root, ctx) {
     return el('div', { class: 'row' }, el('div', { class: 'row-head' }, el('label', { for: id }, label), out), input);
   }
 
-  function select(key, label, options) {
-    const id = `c${uid++}`;
-    const input = el('select', { id });
-    for (const o of options) input.append(el('option', { value: o.id }, o.name));
-    input.addEventListener('change', () => { ctx.set(key, input.value); ctx.commit(); });
-    updaters.push(() => { input.value = P()[key]; });
-    return el('div', { class: 'row' }, el('div', { class: 'row-head' }, el('label', { for: id }, label)), input);
-  }
-
   // три цвета пигментов — круглые кюветы
   function pigmentWells() {
     const box = el('div', { class: 'wells' });
@@ -100,6 +91,20 @@ export function buildUI(root, ctx) {
     }));
     return box;
   }
+  // режимы наложения — кнопки, всегда на виду
+  const blendBox = el('div', { class: 'blends', role: 'radiogroup', 'aria-label': 'Режим наложения' });
+  const blendBtns = BLEND_MODES.map((m) => {
+    const b = el('button', { type: 'button', role: 'radio', onclick: () => { ctx.set('blend', m.id); ctx.commit(); } }, m.name);
+    blendBox.append(b);
+    return b;
+  });
+  updaters.push(() => BLEND_MODES.forEach((m, i) => {
+    const on = P().blend === m.id;
+    blendBtns[i].classList.toggle('active', on);
+    blendBtns[i].setAttribute('aria-checked', on);
+  }));
+  const blend = el('div', { class: 'blend' }, el('div', { class: 'row-head' }, el('label', {}, 'Режим наложения')), blendBox);
+
   const isH = () => P().frontMode === 'h';
   const sideKey = () => (isH() ? 'sideY' : 'sideX');
   const front = el('div', { class: 'front', 'aria-label': 'Фронт' },
@@ -119,7 +124,6 @@ export function buildUI(root, ctx) {
     {
       id: 'source', name: 'Исходное изображение', short: 'Изображение', color: '#E9B949',
       body: [
-        select('blend', 'Режим наложения', BLEND_MODES),
         range('overlay', 'Наложение эффекта', 0, 1, 0.01, pct(0)),
         range('darken', 'Затемнение эффектом', 0, 1, 0.01, pct(0)),
         range('blur', 'Размытие', 0, 1, 0.01, num(2)),
@@ -160,6 +164,7 @@ export function buildUI(root, ctx) {
 
   root.append(
     front,
+    blend,
     tabs,
     bodies,
     el('div', { class: 'foot' },
