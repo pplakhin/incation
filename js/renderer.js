@@ -5,7 +5,7 @@
 import { getContext, Program, Target, createTexture, draw } from './gl.js';
 import { MASK, JFA_SEED, JFA_STEP, DIST, DIST_BLUR } from './shaders/field.js';
 import { DOWN, UP, COPY } from './shaders/blur.js';
-import { COMPOSE, MAX_PIGMENTS } from './shaders/compose.js';
+import { COMPOSE, MAX_PIGMENTS, BLEND_MODES } from './shaders/compose.js';
 
 const BASE = 512;       // рабочий размер для размытия
 const MASK_RES = 768;   // длинная сторона маски и поля расстояний
@@ -235,7 +235,7 @@ export class Renderer {
       .i('uMode', p.mode === 'gradient' ? 1 : 0)
       .f('uSmear', p.smear).f('uLanes', p.lanes).f('uLaneFreq', p.laneFreq)
       .f('uInterior', p.interior).f('uBlotch', p.blotch)
-      .f('uAmount', p.overlay ?? 1).f('uPhoto', 1 - (p.darken ?? 0.65)).f('uWhite', p.white).f('uSat', p.saturation).f('uPalShift', p.paletteShift)
+      .f('uAmount', p.overlay ?? 1).i('uBlend', Math.max(0, BLEND_MODES.findIndex((m) => m.id === p.blend))).f('uPhoto', 1 - (p.darken ?? 0.65)).f('uWhite', p.white).f('uSat', p.saturation).f('uPalShift', p.paletteShift)
       .f('uIntC', ...hexToRgb(p.interiorC)).f('uIntM', ...hexToRgb(p.interiorM))
       .f('uIntY', ...hexToRgb(p.interiorY)).f('uIntK', ...hexToRgb(p.interiorK))
       .f('uPaper', ...hexToRgb(p.paper)).f('uGrain', p.grain).f('uGran', p.granulation)

@@ -36,6 +36,7 @@ export const DEFAULTS = {
   ],
 
   overlay: 1,
+  blend: 'normal',
   darken: 0.65,
   blur: 0.62,
   smear: 0.18,

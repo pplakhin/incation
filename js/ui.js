@@ -1,5 +1,6 @@
 // Панель в виде акварельной палитры: выбор фронта и три раздела-кюветы,
-// в каждом — две-три настройки. Сверху — выбор фронта.
+// в каждом — две-четыре настройки.
+import { BLEND_MODES } from './shaders/compose.js';
 
 const pct = (d = 0) => (v) => `${(v * 100).toFixed(d)}%`;
 const num = (d = 2) => (v) => (+v).toFixed(d);
@@ -34,6 +35,15 @@ export function buildUI(root, ctx) {
     input.addEventListener('change', () => ctx.commit());
     updaters.push(() => { input.value = P()[key]; paint(); });
     return el('div', { class: 'row' }, el('div', { class: 'row-head' }, el('label', { for: id }, label), out), input);
+  }
+
+  function select(key, label, options) {
+    const id = `c${uid++}`;
+    const input = el('select', { id });
+    for (const o of options) input.append(el('option', { value: o.id }, o.name));
+    input.addEventListener('change', () => { ctx.set(key, input.value); ctx.commit(); });
+    updaters.push(() => { input.value = P()[key]; });
+    return el('div', { class: 'row' }, el('div', { class: 'row-head' }, el('label', { for: id }, label)), input);
   }
 
   // три цвета пигментов — круглые кюветы
@@ -109,6 +119,7 @@ export function buildUI(root, ctx) {
     {
       id: 'source', name: 'Исходное изображение', short: 'Изображение', color: '#E9B949',
       body: [
+        select('blend', 'Режим наложения', BLEND_MODES),
         range('overlay', 'Наложение эффекта', 0, 1, 0.01, pct(0)),
         range('darken', 'Затемнение эффектом', 0, 1, 0.01, pct(0)),
         range('blur', 'Размытие', 0, 1, 0.01, num(2)),

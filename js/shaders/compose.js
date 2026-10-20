@@ -5,6 +5,20 @@ import { HEADER, NOISE, PACK } from './common.js';
 
 export const MAX_PIGMENTS = 6;
 
+// Порядок совпадает с номерами в blendMode() шейдера.
+export const BLEND_MODES = [
+  { id: 'normal', name: 'Обычный' },
+  { id: 'multiply', name: 'Умножение' },
+  { id: 'screen', name: 'Экран' },
+  { id: 'overlay', name: 'Перекрытие' },
+  { id: 'soft-light', name: 'Мягкий свет' },
+  { id: 'hard-light', name: 'Жёсткий свет' },
+  { id: 'color-burn', name: 'Затемнение основы' },
+  { id: 'color-dodge', name: 'Осветление основы' },
+  { id: 'difference', name: 'Разница' },
+  { id: 'color', name: 'Цветность' },
+];
+
 export const COMPOSE = HEADER + NOISE + PACK + `
 #define MAXP ${MAX_PIGMENTS}
 uniform vec2 uFull;       // полный размер результата, px
@@ -31,6 +45,7 @@ uniform int uMode;        // 0 — субтрактивное смешение, 
 uniform float uSmear, uLanes, uLaneFreq, uInterior, uBlotch;
 uniform float uWhite, uSat, uPalShift;
 uniform float uAmount;     // степень наложения эффекта на исходник
+uniform int uBlend;        // режим наложения, см. BLEND_MODES
 uniform float uPhoto;      // 1 − затемнение: сколько исходного фото видно сквозь чернила
 uniform float uBlurAmt;    // 0 — резкий исходник
 uniform int uAxis;         // 0 — вертикальный фронт, 1 — горизонтальный
@@ -61,6 +76,23 @@ float laneAt(float t, float depth) {
 
 // Дорожки идут поперёк фронта: координата вдоль него.
 float lanes(vec2 p, float depth) { return laneAt(uAxis == 0 ? p.y : p.x, depth); }
+
+// Режимы наложения слоя эффекта (s) на исходник (b), как в графических редакторах.
+vec3 blendMode(vec3 b, vec3 s) {
+  if (uBlend == 1) return b * s;                                         // умножение
+  if (uBlend == 2) return 1.0 - (1.0 - b) * (1.0 - s);                   // экран
+  if (uBlend == 3) return mix(2.0 * b * s, 1.0 - 2.0 * (1.0 - b) * (1.0 - s), step(0.5, b)); // перекрытие
+  if (uBlend == 4) {                                                     // мягкий свет (W3C)
+    vec3 d = mix(((16.0 * b - 12.0) * b + 4.0) * b, sqrt(b), step(0.25, b));
+    return mix(b - (1.0 - 2.0 * s) * b * (1.0 - b), b + (2.0 * s - 1.0) * (d - b), step(0.5, s));
+  }
+  if (uBlend == 5) return mix(2.0 * b * s, 1.0 - 2.0 * (1.0 - b) * (1.0 - s), step(0.5, s)); // жёсткий свет
+  if (uBlend == 6) return 1.0 - min(vec3(1.0), (1.0 - b) / max(s, vec3(1e-3)));  // затемнение основы
+  if (uBlend == 7) return min(vec3(1.0), b / max(1.0 - s, vec3(1e-3)));         // осветление основы
+  if (uBlend == 8) return abs(b - s);                                    // разница
+  if (uBlend == 9) return clamp(s + (luma(b) - luma(s)), 0.0, 1.0);      // цветность: цвет эффекта, яркость фото
+  return s;                                                              // обычный
+}
 
 vec3 tint(vec3 c, float rho) { return pow(max(c, vec3(0.004)), vec3(max(rho, 0.0))); }
 
@@ -204,7 +236,7 @@ void main() {
   // эффект накладывается поверх исходника: за фронтом — само фото, а не бумага
   vec3 orig = texture(uSrc, uv).rgb;
   vec3 ink = mix(paper * T, s * Tb, uPhoto);   // пастель или фото под каймой
-  vec3 col = mix(orig, ink, cover * uAmount);
+  vec3 col = mix(orig, clamp(blendMode(orig, ink), 0.0, 1.0), cover * uAmount);
 
   if (uView == 2) col = vec3(0.5 + 4.0 * dF, 0.5 + 4.0 * sdf, cover);
   if (uView == 3) col = base;
