@@ -4,6 +4,7 @@ import { makeSample } from './sample.js';
 import { buildUI } from './ui.js';
 import { setupCompare } from './compare.js';
 import { setupFronts } from './fronts.js';
+import { BLEND_MODES } from './shaders/compose.js';
 import { exportSize, renderPNG, download, canShareFile, isTouch, isIOS } from './export.js';
 
 const $ = (id) => document.getElementById(id);
@@ -40,6 +41,8 @@ try {
   const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
   if (saved && saved.params) {
     state.params = Object.assign(structuredClone(DEFAULTS), saved.params, { maskMode: 'line' });
+    // режим из прежней версии мог быть удалён
+    if (!BLEND_MODES.some((m) => m.id === state.params.blend)) state.params.blend = DEFAULTS.blend;
     state.presetId = saved.presetId ?? null;
   }
 } catch { /* приватный режим или повреждённые данные — берём значения по умолчанию */ }

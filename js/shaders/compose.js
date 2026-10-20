@@ -11,10 +11,6 @@ export const BLEND_MODES = [
   { id: 'multiply', name: 'Умножение' },
   { id: 'screen', name: 'Экран' },
   { id: 'overlay', name: 'Перекрытие' },
-  { id: 'soft-light', name: 'Мягкий свет' },
-  { id: 'hard-light', name: 'Жёсткий свет' },
-  { id: 'color-burn', name: 'Затемнение основы' },
-  { id: 'color-dodge', name: 'Осветление основы' },
   { id: 'difference', name: 'Разница' },
   { id: 'color', name: 'Цветность' },
 ];
@@ -82,15 +78,8 @@ vec3 blendMode(vec3 b, vec3 s) {
   if (uBlend == 1) return b * s;                                         // умножение
   if (uBlend == 2) return 1.0 - (1.0 - b) * (1.0 - s);                   // экран
   if (uBlend == 3) return mix(2.0 * b * s, 1.0 - 2.0 * (1.0 - b) * (1.0 - s), step(0.5, b)); // перекрытие
-  if (uBlend == 4) {                                                     // мягкий свет (W3C)
-    vec3 d = mix(((16.0 * b - 12.0) * b + 4.0) * b, sqrt(b), step(0.25, b));
-    return mix(b - (1.0 - 2.0 * s) * b * (1.0 - b), b + (2.0 * s - 1.0) * (d - b), step(0.5, s));
-  }
-  if (uBlend == 5) return mix(2.0 * b * s, 1.0 - 2.0 * (1.0 - b) * (1.0 - s), step(0.5, s)); // жёсткий свет
-  if (uBlend == 6) return 1.0 - min(vec3(1.0), (1.0 - b) / max(s, vec3(1e-3)));  // затемнение основы
-  if (uBlend == 7) return min(vec3(1.0), b / max(1.0 - s, vec3(1e-3)));         // осветление основы
-  if (uBlend == 8) return abs(b - s);                                    // разница
-  if (uBlend == 9) return clamp(s + (luma(b) - luma(s)), 0.0, 1.0);      // цветность: цвет эффекта, яркость фото
+  if (uBlend == 4) return abs(b - s);                                    // разница
+  if (uBlend == 5) return clamp(s + (luma(b) - luma(s)), 0.0, 1.0);      // цветность: цвет эффекта, яркость фото
   return s;                                                              // обычный
 }
 
